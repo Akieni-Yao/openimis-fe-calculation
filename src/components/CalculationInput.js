@@ -61,7 +61,7 @@ class CalculationInput extends Component {
             );
         } else if (
             prevProps.calculationParamsList.length > 0 &&
-            this.props.calculationParamsList.length == 0 
+            this.props.calculationParamsList.length == 0
         ) {
             /* 
                 additional 'if' statemt when have previous calcrule 
@@ -119,7 +119,7 @@ class CalculationInput extends Component {
                         !!prevProps &&
                         !!prevProps.entity &&
                         JSON.stringify(prevProps.entity[linkedClassKey]) !==
-                            JSON.stringify(this.props.entity[linkedClassKey])
+                        JSON.stringify(this.props.entity[linkedClassKey])
                     ) {
                         refetchCalculationParamsList = true;
                     }
@@ -187,6 +187,12 @@ class CalculationInput extends Component {
                 }
             }
         });
+        const employeeContribution = parseFloat(defaultValue[CALCULATION_RULE]['employeeContribution']) || 0;
+        const employerContribution = parseFloat(defaultValue[CALCULATION_RULE]['employerContribution']) || 0;
+        const rate = employeeContribution + employerContribution;
+
+        // Set the calculated sum as the default value for the rate input
+        defaultValue[CALCULATION_RULE]['rate'] = rate;
         if (applyDefaultValue) {
             this.props.onChange(JSON_EXT, JSON.stringify(defaultValue));
         }
@@ -196,12 +202,18 @@ class CalculationInput extends Component {
         const value = !!this.props.value && JSON.parse(this.props.value);
         if (!!value) {
             value[CALCULATION_RULE][inputName] = inputValue;
+            if (inputName === "employeeContribution" || inputName === "employerContribution") {
+                const employeeContribution = parseFloat(value[CALCULATION_RULE]['employeeContribution']) || 0;
+                const employerContribution = parseFloat(value[CALCULATION_RULE]['employerContribution']) || 0;
+                const rate = employeeContribution + employerContribution;
+                value[CALCULATION_RULE]['rate'] = rate;
+            }
             this.props.onChange(JSON_EXT, JSON.stringify(value));
         }
     }
 
     required = (inputName, inputValue, required) => {
-        if(!!required) {
+        if (!!required) {
             const isValid = !!Number(inputValue);
             if (this.state.requiredValid[inputName] !== isValid) {
                 this.setState((state) => ({
@@ -271,18 +283,18 @@ class CalculationInput extends Component {
                             !!variableValue && variableValue[objectField] !== null
                                 ? variableValue[objectField]
                                 : null;
-                        });
-                    parser.setVariable(variableName, variableValue);
                     });
+                    parser.setVariable(variableName, variableValue);
+                });
             }
             parser.setVariable(OBJECT_VARIABLE_NAME, inputValue);
             const result = parser.parse(relevance);
             isRelevance = !!result && result.error === null && !!result.result;
         }
-        else{
+        else {
             inputRelevance = parseBool(inputRelevance)
         }
-        return isRelevance 
+        return isRelevance
     }
 
     inputs = () => {
@@ -304,11 +316,11 @@ class CalculationInput extends Component {
                         !!requiredRights &&
                         Array.isArray(requiredRights) &&
                         requiredRights.every((r) => rights.includes(Number(input.rights[r])));
-                    
+
                     if (!!input.relevance && !!value && value.hasOwnProperty(input.name)) {
                         let checkRelevance = this.relevance(value[input.name], input.relevance);
-                        if (!!checkRelevance){                   
-                            switch (input.type) {                    
+                        if (!!checkRelevance) {
+                            switch (input.type) {
                                 case "number":
                                     inputs.push(
                                         <NumberInput
@@ -317,7 +329,9 @@ class CalculationInput extends Component {
                                             label={input.label[intl.locale]}
                                             value={value[input.name]}
                                             onChange={(v) => this.updateValue(input.name, v ?? 0)}
-                                            readOnly={readOnly || !hasRequiredRights}
+                                            decimal={true}
+                                            // readOnly={readOnly || !hasRequiredRights}
+                                            readOnly={(input.name === "rate") || readOnly || !hasRequiredRights}
                                             required={this.required(input.name, value[input.name], !!input.required)}
                                             error={
                                                 !readOnly &&
@@ -336,6 +350,7 @@ class CalculationInput extends Component {
                                                     checked={value[input.name]}
                                                     onChange={(event) => this.updateValue(input.name, event.target.checked)}
                                                     name={input.name}
+                                                    color="primary"
                                                     disabled={readOnly || !hasRequiredRights}
                                                     required={this.required(input.name, value[input.name], input.required)}
                                                     error={
@@ -350,7 +365,7 @@ class CalculationInput extends Component {
                                 case "select":
                                     const options = [
                                         ...input.optionSet.map((option) => ({
-                                            value: parseInt(option.value)? parseInt(option.value) : option.value,
+                                            value: parseInt(option.value) ? parseInt(option.value) : option.value,
                                             label: option.label[intl.locale]
                                         }))
                                     ];
@@ -385,7 +400,7 @@ class CalculationInput extends Component {
                                             }
                                         />
                                     );
-                                break;
+                                    break;
                             }
                         }
                     }
